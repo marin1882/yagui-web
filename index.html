@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yagüi — Inventario local en tiempo real</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0a0a;
+    --surface:  #141414;
+    --border:   #222;
+    --accent:   #1D9E75;
+    --accent2:  #15b88a;
+    --text:     #e8e8e8;
+    --muted:    #888;
+    --error:    #e05252;
+    --font:     system-ui, -apple-system, sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+
+  .estado-red {
+    font-size: 0.82rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.4s;
+  }
+  .dot.activo { background: var(--accent); }
+
+  /* ── Hero / buscador ── */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 3rem 1rem 1rem;
+    gap: 2rem;
+  }
+
+  .hero-titulo {
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: -1px;
+    line-height: 1.2;
+  }
+  .hero-titulo span { color: var(--accent); }
+
+  .hero-sub {
+    color: var(--muted);
+    text-align: center;
+    max-width: 480px;
+    font-size: 0.95rem;
+  }
+
+  /* ── Caja de búsqueda ── */
+  .busqueda-wrap {
+    width: 100%;
+    max-width: 620px;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .busqueda-inner {
+    flex: 1;
+    display: flex;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .busqueda-inner:focus-within { border-color: var(--accent); }
+
+  #input-busqueda {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    color: var(--text);
+    font-family: var(--font);
+  }
+  #input-busqueda::placeholder { color: var(--muted); }
+
+  .btn-mic {
+    background: transparent;
+    border: none;
+    padding: 0 1rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--muted);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+  }
+  .btn-mic:hover { color: var(--text); }
+  .btn-mic.grabando { color: var(--error); animation: pulso 0.8s infinite alternate; }
+
+  @keyframes pulso { from { opacity: 1; } to { opacity: 0.4; } }
+
+  .btn-buscar {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-buscar:hover { background: var(--accent2); }
+  .btn-buscar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Indicador de estado de búsqueda ── */
+  #estado-busqueda {
+    color: var(--muted);
+    font-size: 0.9rem;
+    min-height: 1.2em;
+    text-align: center;
+  }
+
+  /* ── Resultados ── */
+  #resultados {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .sin-resultados {
+    text-align: center;
+    color: var(--muted);
+    padding: 2rem;
+    font-size: 0.95rem;
+  }
+
+  /* ── Tarjeta de tienda ── */
+  .tarjeta {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .tarjeta-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tarjeta-tienda {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .tarjeta-nodo {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 0.05rem;
+  }
+
+  .badge-ok {
+    margin-left: auto;
+    background: rgba(29, 158, 117, 0.15);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ── Tabla de productos dentro de la tarjeta ── */
+  .productos-lista { padding: 0.5rem 0; }
+
+  .producto-fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 1.1rem;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .producto-fila:last-child { border-bottom: none; }
+
+  .producto-nombre {
+    flex: 1;
+    font-size: 0.95rem;
+  }
+
+  .producto-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .producto-precio {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent);
+  }
+
+  .producto-stock {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── Responsive ── */
+  @media (max-width: 500px) {
+    .busqueda-wrap { flex-wrap: wrap; }
+    .btn-buscar { width: 100%; justify-content: center; display: flex; }
+    .producto-meta { gap: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo">Yag<span>ü</span>i</div>
+    <div class="estado-red">
+      <span class="dot" id="dot-red"></span>
+      <span id="texto-red">Comprobando red…</span>
+    </div>
+  </header>
+
+  <!-- ── Hero / buscador ── -->
+  <main class="hero">
+    <h1 class="hero-titulo">Encuentra lo que buscas<br><span>en tiendas cercanas</span></h1>
+    <p class="hero-sub">
+      Inventario en tiempo real. Sin intermediarios.<br>
+      Pregunta por voz o escribe directamente.
+    </p>
+
+    <div class="busqueda-wrap">
+      <div class="busqueda-inner">
+        <input id="input-busqueda" type="text"
+          placeholder="¿Qué buscas? p.ej. tornillos M6, café molido…"
+          autocomplete="off" spellcheck="false">
+        <button class="btn-mic" id="btn-mic" title="Buscar por voz" aria-label="Micrófono">🎤</button>
+      </div>
+      <button class="btn-buscar" id="btn-buscar">Buscar</button>
+    </div>
+
+    <div id="estado-busqueda"></div>
+    <div id="resultados"></div>
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    Yagüi — Protocolo abierto de inventario local<br>
+    ¿Tienes una tienda? → <a href="https://xn--yagi-2ra.com/comerciante">yagüi.es/comerciante</a><br>
+    ¿Eres desarrollador? → <a href="https://xn--yagi-2ra.com/buscar?q=test&key=demo">xn--yagi-2ra.com/buscar?q=test&amp;key=demo</a>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+
+const API_BASE    = "https://xn--yagi-2ra.com";
+const AI_BASE     = "https://xn--yagi-2ra.com/ai";
+const BUSCAR_KEY  = "demo";
+
+// ── Estado de la red ──────────────────────────────────────────────────────────
+
+async function actualizarEstadoRed() {
+  const dot   = document.getElementById("dot-red");
+  const texto = document.getElementById("texto-red");
+  try {
+    const r    = await fetch(`${API_BASE}/buscar?q=_ping&key=${BUSCAR_KEY}`);
+    const data = await r.json();
+    const n    = data.nodos_consultados ?? 0;
+    dot.className   = "dot " + (n > 0 ? "activo" : "");
+    texto.textContent = n > 0 ? `${n} nodo${n !== 1 ? "s" : ""} activo${n !== 1 ? "s" : ""}` : "Sin nodos activos";
+  } catch {
+    dot.className   = "dot";
+    texto.textContent = "Sin conexión";
+  }
+}
+
+actualizarEstadoRed();
+setInterval(actualizarEstadoRed, 30_000);
+
+// ── Búsqueda ──────────────────────────────────────────────────────────────────
+
+const inputEl  = document.getElementById("input-busqueda");
+const btnBuscar = document.getElementById("btn-buscar");
+const estadoEl = document.getElementById("estado-busqueda");
+const resultsEl = document.getElementById("resultados");
+
+btnBuscar.addEventListener("click", () => buscar(inputEl.value.trim()));
+inputEl.addEventListener("keydown", e => {
+  if (e.key === "Enter") buscar(inputEl.value.trim());
+});
+
+async function buscar(q) {
+  if (!q) return;
+  btnBuscar.disabled = true;
+  resultsEl.innerHTML = "";
+  estadoEl.textContent = "Consultando nodos activos…";
+
+  try {
+    const url = `${API_BASE}/buscar?q=${encodeURIComponent(q)}&key=${BUSCAR_KEY}`;
+    const r   = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+
+    const n = data.nodos_consultados ?? 0;
+    estadoEl.textContent = n === 0
+      ? "No hay nodos activos en este momento"
+      : `${n} nodo${n !== 1 ? "s" : ""} consultado${n !== 1 ? "s" : ""}`;
+
+    if (!data.resultados?.length) {
+      resultsEl.innerHTML = `<div class="sin-resultados">
+        Ninguna tienda tiene "<strong>${esc(q)}</strong>" en su inventario ahora mismo.
+      </div>`;
+    } else {
+      data.resultados.forEach(r => resultsEl.appendChild(renderTarjeta(r)));
+    }
+  } catch (e) {
+    estadoEl.textContent = "Error al buscar: " + e.message;
+  } finally {
+    btnBuscar.disabled = false;
+  }
+}
+
+function renderTarjeta({ nodo, tienda, productos }) {
+  const el = document.createElement("div");
+  el.className = "tarjeta";
+
+  const n = productos?.length ?? 0;
+  el.innerHTML = `
+    <div class="tarjeta-cabecera">
+      <div>
+        <div class="tarjeta-tienda">✅ ${esc(tienda || "Tienda")}</div>
+        <div class="tarjeta-nodo">📍 ${esc(nodo || "")}</div>
+      </div>
+      <div class="badge-ok">${n} producto${n !== 1 ? "s" : ""}</div>
+    </div>
+    <div class="productos-lista">
+      ${(productos || []).map(p => `
+        <div class="producto-fila">
+          <div class="producto-nombre">${esc(p.nombre || "–")}</div>
+          <div class="producto-meta">
+            <span class="producto-precio">${formatPrecio(p.precio)}</span>
+            <span class="producto-stock">En stock: ${p.stock ?? "–"} uds</span>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+  return el;
+}
+
+function formatPrecio(v) {
+  if (v == null || v === "") return "–";
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency", currency: "EUR"
+  }).format(v);
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// ── Micrófono (MediaRecorder → Whisper) ──────────────────────────────────────
+
+const btnMic = document.getElementById("btn-mic");
+let mediaRecorder = null;
+let audioChunks   = [];
+let grabando      = false;
+
+btnMic.addEventListener("click", async () => {
+  if (grabando) {
+    mediaRecorder?.stop();
+  } else {
+    await iniciarGrabacion();
+  }
+});
+
+async function iniciarGrabacion() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks  = [];
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      grabando = false;
+      btnMic.className = "btn-mic";
+      stream.getTracks().forEach(t => t.stop());
+
+      const blob   = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      const b64    = await blobToBase64(blob);
+      estadoEl.textContent = "Transcribiendo audio…";
+      btnBuscar.disabled   = true;
+
+      try {
+        // 1. Transcribir
+        const tRes   = await fetch(`${AI_BASE}/transcribir`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audio_base64: b64 }),
+        });
+        const tData  = await tRes.json();
+        const texto  = tData.texto || "";
+        if (!texto) { estadoEl.textContent = "No se detectó voz."; return; }
+
+        inputEl.value = texto;
+        estadoEl.textContent = "Procesando consulta…";
+
+        // 2. Limpiar la query con LLM
+        const pRes   = await fetch(`${AI_BASE}/procesar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto }),
+        });
+        const pData  = await pRes.json();
+        const query  = pData.query || texto;
+
+        inputEl.value = query;
+        await buscar(query);
+      } catch (e) {
+        estadoEl.textContent = "Error: " + e.message;
+      } finally {
+        btnBuscar.disabled = false;
+      }
+    };
+
+    mediaRecorder.start();
+    grabando = true;
+    btnMic.className = "btn-mic grabando";
+    estadoEl.textContent = "🔴 Grabando… pulsa el micrófono para parar";
+  } catch (e) {
+    estadoEl.textContent = "No se pudo acceder al micrófono: " + e.message;
+  }
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => {
+      // result es "data:audio/webm;base64,XXXX" — extraer solo XXXX
+      const b64 = reader.result.split(",")[1];
+      resolve(b64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+</script>
+</body>
+</html>

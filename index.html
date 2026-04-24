@@ -3,344 +3,245 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Yagüi — Inventario local en tiempo real</title>
+<title>Yagüi — Busca en el comercio local</title>
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        terracota: "#E2725B",
+        sunset:    "#FD5E53",
+        chile:     "#C21807",
+        olive: {
+          DEFAULT: "#808000",
+          dark:    "#5a5a00",
+          mid:     "#666600",
+          light:   "#aaaa00",
+          bright:  "#d4d400",
+        },
+      },
+      fontFamily: {
+        mono:    ['"Martian Mono"', "monospace"],
+        grotesk: ['"Space Grotesk"', "sans-serif"],
+      },
+    },
+  },
+};
+</script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
+
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Space Grotesk", sans-serif; }
 
-  :root {
-    --bg:       #0a0a0a;
-    --surface:  #141414;
-    --border:   #222;
-    --accent:   #1D9E75;
-    --accent2:  #15b88a;
-    --text:     #e8e8e8;
-    --muted:    #888;
-    --error:    #e05252;
-    --font:     system-ui, -apple-system, sans-serif;
+  .material-symbols-rounded {
+    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+    user-select: none;
+    line-height: 1;
   }
 
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 16px;
-    line-height: 1.5;
-  }
+  /* Input: quitar borde/outline nativo, placeholder en blanco translúcido */
+  #input-busqueda::placeholder { color: rgba(255,255,255,0.5); }
+  #input-busqueda:focus { outline: none; }
+  #input-busqueda { caret-color: white; }
 
-  /* ── Layout ── */
-  .page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+  /* Olive terminal box scrollbar */
+  #caja-respuesta::-webkit-scrollbar { width: 5px; }
+  #caja-respuesta::-webkit-scrollbar-track { background: #5a5a00; border-radius: 4px; }
+  #caja-respuesta::-webkit-scrollbar-thumb { background: #aaaa00; border-radius: 4px; }
 
-  /* ── Header ── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
+  /* Mic pulse cuando graba */
+  @keyframes mic-pulse {
+    0%, 100% { opacity: 1;   transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.85); }
   }
+  .grabando { animation: mic-pulse 0.75s ease-in-out infinite; }
 
-  .logo {
-    font-size: 1.3rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    color: var(--text);
-  }
-  .logo span { color: var(--accent); }
+  /* Cursor terminal parpadeante */
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+  .cursor-blink { animation: blink 1s step-end infinite; }
 
-  .estado-red {
-    font-size: 0.82rem;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    white-space: nowrap;
-  }
-  .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    flex-shrink: 0;
-    transition: background 0.4s;
-  }
-  .dot.activo { background: var(--accent); }
-
-  /* ── Hero / buscador ── */
-  .hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    padding: 3rem 1rem 1rem;
-    gap: 2rem;
-  }
-
-  .hero-titulo {
-    font-size: clamp(1.6rem, 5vw, 2.6rem);
-    font-weight: 700;
-    text-align: center;
-    letter-spacing: -1px;
-    line-height: 1.2;
-  }
-  .hero-titulo span { color: var(--accent); }
-
-  .hero-sub {
-    color: var(--muted);
-    text-align: center;
-    max-width: 480px;
-    font-size: 0.95rem;
-  }
-
-  /* ── Caja de búsqueda ── */
-  .busqueda-wrap {
-    width: 100%;
-    max-width: 620px;
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .busqueda-inner {
-    flex: 1;
-    display: flex;
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .busqueda-inner:focus-within { border-color: var(--accent); }
-
-  #input-busqueda {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    padding: 0.85rem 1rem;
-    font-size: 1rem;
-    color: var(--text);
-    font-family: var(--font);
-  }
-  #input-busqueda::placeholder { color: var(--muted); }
-
-  .btn-mic {
-    background: transparent;
-    border: none;
-    padding: 0 1rem;
-    cursor: pointer;
-    font-size: 1.2rem;
-    color: var(--muted);
-    transition: color 0.2s;
-    display: flex;
-    align-items: center;
-  }
-  .btn-mic:hover { color: var(--text); }
-  .btn-mic.grabando { color: var(--error); animation: pulso 0.8s infinite alternate; }
-
-  @keyframes pulso { from { opacity: 1; } to { opacity: 0.4; } }
-
-  .btn-buscar {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 0.85rem 1.4rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
-  }
-  .btn-buscar:hover { background: var(--accent2); }
-  .btn-buscar:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* ── Indicador de estado de búsqueda ── */
-  #estado-busqueda {
-    color: var(--muted);
-    font-size: 0.9rem;
-    min-height: 1.2em;
-    text-align: center;
-  }
-
-  /* ── Resultados ── */
-  #resultados {
-    width: 100%;
-    max-width: 720px;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding-bottom: 2rem;
-  }
-
-  .sin-resultados {
-    text-align: center;
-    color: var(--muted);
-    padding: 2rem;
-    font-size: 0.95rem;
-  }
-
-  /* ── Tarjeta de tienda ── */
-  .tarjeta {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-
-  .tarjeta-cabecera {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.9rem 1.1rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .tarjeta-tienda {
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .tarjeta-nodo {
-    color: var(--muted);
-    font-size: 0.78rem;
-    margin-top: 0.05rem;
-  }
-
-  .badge-ok {
-    margin-left: auto;
-    background: rgba(29, 158, 117, 0.15);
-    color: var(--accent);
-    border-radius: 20px;
-    padding: 0.2rem 0.6rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  /* ── Tabla de productos dentro de la tarjeta ── */
-  .productos-lista { padding: 0.5rem 0; }
-
-  .producto-fila {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.55rem 1.1rem;
-    gap: 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .producto-fila:last-child { border-bottom: none; }
-
-  .producto-nombre {
-    flex: 1;
-    font-size: 0.95rem;
-  }
-
-  .producto-meta {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    flex-shrink: 0;
-  }
-
-  .producto-precio {
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--accent);
-  }
-
-  .producto-stock {
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  /* ── Footer ── */
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 1.5rem;
-    text-align: center;
-    font-size: 0.82rem;
-    color: var(--muted);
-    line-height: 1.8;
-  }
-  footer a { color: var(--accent); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
-
-  /* ── Responsive ── */
-  @media (max-width: 500px) {
-    .busqueda-wrap { flex-wrap: wrap; }
-    .btn-buscar { width: 100%; justify-content: center; display: flex; }
-    .producto-meta { gap: 0.7rem; }
-  }
+  /* Smooth dot color transition */
+  #dot-red { transition: background-color 0.5s ease; }
 </style>
 </head>
-<body>
-<div class="page">
 
-  <!-- ── Header ── -->
-  <header>
-    <div class="logo">Yag<span>ü</span>i</div>
-    <div class="estado-red">
-      <span class="dot" id="dot-red"></span>
-      <span id="texto-red">Comprobando red…</span>
-    </div>
-  </header>
+<body class="bg-terracota min-h-screen flex flex-col">
 
-  <!-- ── Hero / buscador ── -->
-  <main class="hero">
-    <h1 class="hero-titulo">Encuentra lo que buscas<br><span>en tiendas cercanas</span></h1>
-    <p class="hero-sub">
-      Inventario en tiempo real. Sin intermediarios.<br>
-      Pregunta por voz o escribe directamente.
+<!-- ═══════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════ -->
+<header class="flex items-center justify-between px-6 py-5">
+  <!-- Logo -->
+  <div class="font-mono font-bold text-white text-xl tracking-tight select-none">
+    Yag<span class="text-chile">ü</span>i
+  </div>
+
+  <!-- Estado de la red -->
+  <div class="flex items-center gap-2">
+    <span id="dot-red"
+      class="block w-2 h-2 rounded-full bg-white/25">
+    </span>
+    <span id="texto-red"
+      class="font-mono text-xs text-white/50 tracking-tight">
+      comprobando red…
+    </span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     MAIN
+═══════════════════════════════════════════ -->
+<main class="flex-1 flex flex-col items-center justify-center px-4 pt-2 pb-10 gap-7">
+
+  <!-- Título -->
+  <div class="text-center">
+    <h1 class="font-grotesk font-bold text-white leading-tight tracking-tight"
+        style="font-size: clamp(2rem, 8vw, 3.5rem);">
+      ¿Qué buscas?
+    </h1>
+    <p class="font-grotesk text-white/55 text-sm mt-2 font-light">
+      Inventario en tiempo real · comercio local
     </p>
+  </div>
 
-    <div class="busqueda-wrap">
-      <div class="busqueda-inner">
-        <input id="input-busqueda" type="text"
-          placeholder="¿Qué buscas? p.ej. tornillos M6, café molido…"
-          autocomplete="off" spellcheck="false">
-        <button class="btn-mic" id="btn-mic" title="Buscar por voz" aria-label="Micrófono">🎤</button>
-      </div>
-      <button class="btn-buscar" id="btn-buscar">Buscar</button>
+  <!-- Barra de búsqueda (sunset) -->
+  <div class="w-full" style="max-width:640px;">
+    <div class="flex items-center bg-sunset rounded-2xl px-4 py-3 gap-2 shadow-lg">
+
+      <!-- Campo de texto -->
+      <input
+        id="input-busqueda"
+        type="text"
+        placeholder="tornillos M6, café molido, pintura blanca…"
+        class="flex-1 bg-transparent text-white font-grotesk text-base
+               border-none focus:outline-none"
+        autocomplete="off"
+        spellcheck="false"
+      />
+
+      <!-- Botón búsqueda (lupa) -->
+      <button
+        id="btn-buscar"
+        class="text-white/70 hover:text-white transition-colors flex items-center justify-center
+               w-9 h-9 rounded-full hover:bg-white/10"
+        title="Buscar"
+        aria-label="Buscar"
+      >
+        <span class="material-symbols-rounded text-2xl">search</span>
+      </button>
+
+      <!-- Separador -->
+      <div class="w-px h-5 bg-white/20"></div>
+
+      <!-- Botón micrófono (chile red) -->
+      <button
+        id="btn-mic"
+        class="text-chile flex items-center justify-center
+               w-9 h-9 rounded-full hover:bg-white/10 transition-colors"
+        title="Buscar por voz"
+        aria-label="Buscar por voz"
+      >
+        <span class="material-symbols-rounded text-2xl">mic</span>
+      </button>
+
     </div>
 
-    <div id="estado-busqueda"></div>
-    <div id="resultados"></div>
-  </main>
+    <!-- Estado / feedback de búsqueda -->
+    <p id="estado-busqueda"
+       class="font-mono text-white/40 text-xs mt-2 px-1 min-h-[1.1em] tracking-tight">
+    </p>
+  </div>
 
-  <!-- ── Footer ── -->
-  <footer>
-    Yagüi — Protocolo abierto de inventario local<br>
-    ¿Tienes una tienda? → <a href="https://xn--yagi-2ra.com/comerciante">yagüi.es/comerciante</a><br>
-    ¿Eres desarrollador? → <a href="https://xn--yagi-2ra.com/buscar?q=test&key=demo">xn--yagi-2ra.com/buscar?q=test&amp;key=demo</a>
-  </footer>
+  <!-- Caja de respuesta (olive) -->
+  <div class="w-full" style="max-width:640px;">
+    <div
+      id="caja-respuesta"
+      class="bg-olive rounded-xl p-5 font-mono text-sm leading-relaxed
+             overflow-y-auto shadow-inner"
+      style="color:#d4d400; min-height:220px; max-height:400px;"
+    >
+      <!-- Contenido inicial -->
+      <p class="opacity-50"><span style="color:#aaaa00;">&gt;</span> Escribe o habla para buscar</p>
+      <p class="opacity-50"><span style="color:#aaaa00;">&gt;</span> en la red Yagüi</p>
+      <p class="mt-3 opacity-30">
+        <span class="cursor-blink">█</span>
+      </p>
+    </div>
+  </div>
 
-</div>
+</main>
 
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<footer class="text-center py-5 px-6 font-mono text-xs text-white/35 space-y-1.5">
+  <div class="flex justify-center gap-5 flex-wrap">
+    <a href="#" class="hover:text-white/60 transition-colors">Privacidad</a>
+    <a href="#" class="hover:text-white/60 transition-colors">Términos</a>
+    <a href="#" class="hover:text-white/60 transition-colors">Acerca de</a>
+  </div>
+  <div>
+    API:
+    <a href="https://xn--yagi-2ra.com/buscar?q=test&key=demo"
+       class="underline underline-offset-2 hover:text-white/60 transition-colors">
+      xn--yagi-2ra.com/buscar?q=test&amp;key=demo
+    </a>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
 <script>
 "use strict";
 
-const API_BASE    = "https://xn--yagi-2ra.com";
-const AI_BASE     = "https://xn--yagi-2ra.com/ai";
-const BUSCAR_KEY  = "demo";
+const API_BASE   = "https://xn--yagi-2ra.com";
+const AI_BASE    = "https://xn--yagi-2ra.com/ai";
+const BUSCAR_KEY = "demo";
+
+const inputEl    = document.getElementById("input-busqueda");
+const btnBuscar  = document.getElementById("btn-buscar");
+const btnMic     = document.getElementById("btn-mic");
+const cajaEl     = document.getElementById("caja-respuesta");
+const estadoEl   = document.getElementById("estado-busqueda");
+const dotEl      = document.getElementById("dot-red");
+const textoRedEl = document.getElementById("texto-red");
 
 // ── Estado de la red ──────────────────────────────────────────────────────────
 
 async function actualizarEstadoRed() {
-  const dot   = document.getElementById("dot-red");
-  const texto = document.getElementById("texto-red");
   try {
-    const r    = await fetch(`${API_BASE}/buscar?q=_ping&key=${BUSCAR_KEY}`);
-    const data = await r.json();
-    const n    = data.nodos_consultados ?? 0;
-    dot.className   = "dot " + (n > 0 ? "activo" : "");
-    texto.textContent = n > 0 ? `${n} nodo${n !== 1 ? "s" : ""} activo${n !== 1 ? "s" : ""}` : "Sin nodos activos";
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 5000);
+    const r = await fetch(
+      `${API_BASE}/buscar?q=_ping&key=${BUSCAR_KEY}`,
+      { signal: ctrl.signal }
+    );
+    const d = await r.json();
+    const n = d.nodos_consultados ?? 0;
+    if (n > 0) {
+      dotEl.style.backgroundColor = "#4ade80";
+      textoRedEl.textContent = `🟢 ${n} nodo${n !== 1 ? "s" : ""} activo${n !== 1 ? "s" : ""}`;
+    } else {
+      dotEl.style.backgroundColor = "rgba(255,255,255,0.25)";
+      textoRedEl.textContent = "sin nodos activos";
+    }
+    textoRedEl.style.opacity = "0.6";
   } catch {
-    dot.className   = "dot";
-    texto.textContent = "Sin conexión";
+    dotEl.style.backgroundColor = "rgba(255,255,255,0.15)";
+    textoRedEl.textContent = "sin conexión";
+    textoRedEl.style.opacity = "0.35";
   }
 }
 
@@ -349,82 +250,99 @@ setInterval(actualizarEstadoRed, 30_000);
 
 // ── Búsqueda ──────────────────────────────────────────────────────────────────
 
-const inputEl  = document.getElementById("input-busqueda");
-const btnBuscar = document.getElementById("btn-buscar");
-const estadoEl = document.getElementById("estado-busqueda");
-const resultsEl = document.getElementById("resultados");
-
-btnBuscar.addEventListener("click", () => buscar(inputEl.value.trim()));
 inputEl.addEventListener("keydown", e => {
-  if (e.key === "Enter") buscar(inputEl.value.trim());
+  if (e.key === "Enter") lanzarBusqueda();
 });
+btnBuscar.addEventListener("click", lanzarBusqueda);
+
+function lanzarBusqueda() {
+  const q = inputEl.value.trim();
+  if (q) buscar(q);
+}
 
 async function buscar(q) {
-  if (!q) return;
   btnBuscar.disabled = true;
-  resultsEl.innerHTML = "";
-  estadoEl.textContent = "Consultando nodos activos…";
+  estadoEl.textContent = "";
+  setCaja([
+    `> Buscando "${q}"…`,
+    `> Consultando red Yagüi...`,
+  ]);
 
   try {
-    const url = `${API_BASE}/buscar?q=${encodeURIComponent(q)}&key=${BUSCAR_KEY}`;
-    const r   = await fetch(url);
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 10_000);
+
+    const r = await fetch(
+      `${API_BASE}/buscar?q=${encodeURIComponent(q)}&key=${BUSCAR_KEY}`,
+      { signal: ctrl.signal }
+    );
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
     const n = data.nodos_consultados ?? 0;
-    estadoEl.textContent = n === 0
-      ? "No hay nodos activos en este momento"
-      : `${n} nodo${n !== 1 ? "s" : ""} consultado${n !== 1 ? "s" : ""}`;
+    estadoEl.textContent = n > 0
+      ? `${n} nodo${n !== 1 ? "s" : ""} consultado${n !== 1 ? "s" : ""}`
+      : "0 nodos activos";
 
-    if (!data.resultados?.length) {
-      resultsEl.innerHTML = `<div class="sin-resultados">
-        Ninguna tienda tiene "<strong>${esc(q)}</strong>" en su inventario ahora mismo.
-      </div>`;
-    } else {
-      data.resultados.forEach(r => resultsEl.appendChild(renderTarjeta(r)));
-    }
+    renderResultados(data, q);
   } catch (e) {
-    estadoEl.textContent = "Error al buscar: " + e.message;
+    if (e.name === "AbortError") {
+      setCaja(["> Tiempo de espera agotado.", "> Comprueba tu conexión."]);
+    } else {
+      setCaja([`> Error: ${e.message}`]);
+    }
   } finally {
     btnBuscar.disabled = false;
   }
 }
 
-function renderTarjeta({ nodo, tienda, productos }) {
-  const el = document.createElement("div");
-  el.className = "tarjeta";
+function renderResultados(data, q) {
+  const n = data.nodos_consultados ?? 0;
+  const resultados = data.resultados ?? [];
+  const lines = [];
 
-  const n = productos?.length ?? 0;
-  el.innerHTML = `
-    <div class="tarjeta-cabecera">
-      <div>
-        <div class="tarjeta-tienda">✅ ${esc(tienda || "Tienda")}</div>
-        <div class="tarjeta-nodo">📍 ${esc(nodo || "")}</div>
-      </div>
-      <div class="badge-ok">${n} producto${n !== 1 ? "s" : ""}</div>
-    </div>
-    <div class="productos-lista">
-      ${(productos || []).map(p => `
-        <div class="producto-fila">
-          <div class="producto-nombre">${esc(p.nombre || "–")}</div>
-          <div class="producto-meta">
-            <span class="producto-precio">${formatPrecio(p.precio)}</span>
-            <span class="producto-stock">En stock: ${p.stock ?? "–"} uds</span>
-          </div>
-        </div>
-      `).join("")}
-    </div>
-  `;
-  return el;
+  lines.push(`> Búsqueda: "${q}"`);
+  lines.push(`> ${n} nodo${n !== 1 ? "s" : ""} respondido${n !== 1 ? "s" : ""}`);
+  lines.push("");
+
+  if (!resultados.length) {
+    lines.push("> Sin coincidencias en la red ahora mismo.");
+    lines.push("");
+    lines.push("> Prueba con otro término o vuelve más tarde.");
+  } else {
+    for (const { nodo, tienda, productos } of resultados) {
+      lines.push(`> [${tienda || "Tienda"}] — ${nodo || ""}`);
+      for (const p of (productos || [])) {
+        const precio = p.precio != null
+          ? new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(p.precio)
+          : "–";
+        const stock = p.stock ?? "–";
+        lines.push(`>   ${p.nombre || "–"} · ${precio} · ${stock} uds`);
+      }
+      lines.push("");
+    }
+  }
+
+  setCaja(lines);
 }
 
-function formatPrecio(v) {
-  if (v == null || v === "") return "–";
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency", currency: "EUR"
-  }).format(v);
+// Renderiza un array de líneas en la caja olive con colores de terminal
+function setCaja(lines) {
+  cajaEl.innerHTML = lines.map(line => {
+    if (line === "") {
+      return `<p style="height:0.6em;"></p>`;
+    }
+    if (line.startsWith("> ")) {
+      return `<p><span style="color:#aaaa00;">&gt;</span> ${esc(line.slice(2))}</p>`;
+    }
+    return `<p style="opacity:0.7;">${esc(line)}</p>`;
+  }).join("");
+
+  // Scroll al fondo
+  cajaEl.scrollTop = cajaEl.scrollHeight;
 }
 
+// Escape HTML básico
 function esc(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -433,12 +351,12 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
-// ── Micrófono (MediaRecorder → Whisper) ──────────────────────────────────────
+// ── Micrófono (MediaRecorder → Whisper AI) ────────────────────────────────────
 
-const btnMic = document.getElementById("btn-mic");
 let mediaRecorder = null;
 let audioChunks   = [];
 let grabando      = false;
+const micIcon     = btnMic.querySelector(".material-symbols-rounded");
 
 btnMic.addEventListener("click", async () => {
   if (grabando) {
@@ -460,41 +378,53 @@ async function iniciarGrabacion() {
 
     mediaRecorder.onstop = async () => {
       grabando = false;
-      btnMic.className = "btn-mic";
+      micIcon.classList.remove("grabando");
+      micIcon.textContent = "mic";
+      btnMic.style.color = "";
       stream.getTracks().forEach(t => t.stop());
 
-      const blob   = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-      const b64    = await blobToBase64(blob);
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      const b64  = await blobABase64(blob);
+
       estadoEl.textContent = "Transcribiendo audio…";
-      btnBuscar.disabled   = true;
+      setCaja(["> Transcribiendo audio…"]);
+      btnBuscar.disabled = true;
 
       try {
-        // 1. Transcribir
-        const tRes   = await fetch(`${AI_BASE}/transcribir`, {
+        // 1 — Transcribir con Whisper
+        const tRes  = await fetch(`${AI_BASE}/transcribir`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ audio_base64: b64 }),
         });
-        const tData  = await tRes.json();
-        const texto  = tData.texto || "";
-        if (!texto) { estadoEl.textContent = "No se detectó voz."; return; }
+        const tData = await tRes.json();
+        const texto = (tData.texto || "").trim();
+
+        if (!texto) {
+          estadoEl.textContent = "No se detectó voz.";
+          setCaja(["> No se detectó voz.", "> Intenta de nuevo."]);
+          return;
+        }
 
         inputEl.value = texto;
         estadoEl.textContent = "Procesando consulta…";
+        setCaja([`> Transcripción: "${texto}"`, "> Procesando consulta…"]);
 
-        // 2. Limpiar la query con LLM
-        const pRes   = await fetch(`${AI_BASE}/procesar`, {
+        // 2 — Limpiar query con LLM
+        const pRes  = await fetch(`${AI_BASE}/procesar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ texto }),
         });
-        const pData  = await pRes.json();
-        const query  = pData.query || texto;
+        const pData = await pRes.json();
+        const query = (pData.query || texto).trim();
 
         inputEl.value = query;
+        estadoEl.textContent = "";
         await buscar(query);
       } catch (e) {
-        estadoEl.textContent = "Error: " + e.message;
+        estadoEl.textContent = "Error en IA: " + e.message;
+        setCaja([`> Error: ${e.message}`]);
       } finally {
         btnBuscar.disabled = false;
       }
@@ -502,21 +432,21 @@ async function iniciarGrabacion() {
 
     mediaRecorder.start();
     grabando = true;
-    btnMic.className = "btn-mic grabando";
-    estadoEl.textContent = "🔴 Grabando… pulsa el micrófono para parar";
+    micIcon.classList.add("grabando");
+    micIcon.textContent = "mic";
+    btnMic.style.color = "#C21807";
+    estadoEl.textContent = "🔴 Grabando… pulsa de nuevo para parar";
+    setCaja(["> 🔴 Grabando…", "> Pulsa el micrófono para parar."]);
   } catch (e) {
-    estadoEl.textContent = "No se pudo acceder al micrófono: " + e.message;
+    estadoEl.textContent = "Sin acceso al micrófono: " + e.message;
+    setCaja(["> Sin acceso al micrófono.", `> ${e.message}`]);
   }
 }
 
-function blobToBase64(blob) {
+function blobABase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload  = () => {
-      // result es "data:audio/webm;base64,XXXX" — extraer solo XXXX
-      const b64 = reader.result.split(",")[1];
-      resolve(b64);
-    };
+    reader.onload  = () => resolve(reader.result.split(",")[1]);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });

@@ -2,7 +2,7 @@
 
 const API_BASE   = "https://xn--yagi-2ra.com";
 const AI_BASE    = "https://xn--yagi-2ra.com/ai";
-const BUSCAR_KEY = "demo";
+const BUSCAR_KEY = "yagui-public-d6c8b050-e51c-4781-b3cc-3cad2b1cd3ae";
 
 const inputEl    = document.getElementById("input-busqueda");
 const btnBuscar  = document.getElementById("btn-buscar");

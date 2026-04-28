@@ -1,173 +1,291 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Yagüi — Busca en el comercio local</title>
-
-<!-- Tailwind CDN -->
-<script src="https://cdn.tailwindcss.com/3.4.17" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
-<script src="./tailwind-config.js"></script>
-
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- Material Symbols -->
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
-
+<title>Yagüi — encuéntralo</title>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Martian Mono", monospace; }
-  body { font-family: "Martian Mono", monospace; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .material-symbols-rounded {
-    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
-    user-select: none;
-    line-height: 1;
+  body {
+    background-color: #E2725B;
+    font-family: 'Martian Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #E2725B;
   }
 
-  /* Input: quitar borde/outline nativo, placeholder en blanco translúcido */
-  #input-busqueda::placeholder { color: rgba(128,128,0,0.4); }
-  #input-busqueda:focus { outline: none; }
-  #input-busqueda { caret-color: #808000; }
-
-  /* Olive terminal box scrollbar */
-  #caja-respuesta::-webkit-scrollbar { width: 5px; }
-  #caja-respuesta::-webkit-scrollbar-track { background: rgba(128,128,0,0.5); border-radius: 4px; }
-  #caja-respuesta::-webkit-scrollbar-thumb { background: rgba(253,245,230,0.3); border-radius: 4px; }
-
-  /* Mic pulse cuando graba */
-  @keyframes mic-pulse {
-    0%, 100% { opacity: 1;   transform: scale(1); }
-    50%       { opacity: 0.4; transform: scale(0.85); }
+  header {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 32px;
   }
-  .grabando { animation: mic-pulse 0.75s ease-in-out infinite; }
 
-  /* Cursor terminal parpadeante */
-  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
-  .cursor-blink { animation: blink 1s step-end infinite; }
+  .logo {
+    font-size: 24px;
+    font-weight: 700;
+    color: #B32824;
+    letter-spacing: -0.03em;
+  }
 
-  /* Smooth dot color transition */
-  #dot-red { transition: background-color 0.5s ease; }
+  .header-links {
+    display: flex;
+    gap: 28px;
+  }
+
+  .header-links a {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #B32824;
+    opacity: 0.75;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+
+  .header-links a:hover { opacity: 1; }
+
+  main {
+    width: 100%;
+    max-width: 800px;
+    padding: 40px 32px 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+
+  .tagline {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #B32824;
+    margin-bottom: 40px;
+  }
+
+  .search-wrap {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    background-color: #FDF5E6;
+    border-radius: 0 0 12px 0;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .search-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Martian Mono', monospace;
+    font-size: 15px;
+    font-weight: 400;
+    color: #808000;
+    padding: 18px 24px;
+  }
+
+  .search-wrap input::placeholder {
+    color: rgba(128,128,0,0.45);
+  }
+
+  .search-wrap button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 18px 22px;
+    font-family: 'Martian Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: #808000;
+    transition: opacity 0.15s;
+  }
+
+  .search-wrap button:hover { opacity: 0.7; }
+
+  .results-box {
+    width: 100%;
+    background-color: #808000;
+    border-radius: 0 0 12px 0;
+    padding: 28px 28px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .results-header {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(253,245,230,0.45);
+    margin-bottom: 20px;
+  }
+
+  .result-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(253,245,230,0.1);
+  }
+
+  .result-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .result-item:first-of-type { padding-top: 0; }
+
+  .result-distance {
+    font-size: 11px;
+    font-weight: 700;
+    color: #FDF5E6;
+    min-width: 52px;
+    letter-spacing: 0.04em;
+    opacity: 0.5;
+  }
+
+  .result-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .result-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #FDF5E6;
+    letter-spacing: -0.01em;
+  }
+
+  .result-meta {
+    font-size: 11px;
+    color: rgba(253,245,230,0.45);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
+  .result-status {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .status-yes { color: #FDF5E6; }
+  .status-maybe { color: rgba(253,245,230,0.5); }
+
+  .no-results {
+    font-size: 13px;
+    color: rgba(253,245,230,0.4);
+    font-weight: 400;
+    text-align: center;
+    padding: 28px 0 8px;
+    letter-spacing: 0.01em;
+  }
+
+  footer {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 20px 32px 32px;
+  }
+
+  footer a {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #B32824;
+    opacity: 0.5;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+
+  footer a:hover { opacity: 1; }
 </style>
 </head>
+<body>
 
-<body class="min-h-screen flex flex-col" style="background:#E2725B;">
-
-<!-- ═══════════════════════════════════════════
-     HEADER
-═══════════════════════════════════════════ -->
-<header class="flex items-center justify-between px-6 py-5">
-  <!-- Logo -->
-  <div style="background:#FDF5E6;color:#FD5E53;border-radius:12px 0 0 0;padding:12px 16px;font-weight:700;font-size:1.25rem;letter-spacing:-0.025em;user-select:none;">
-    Yagüi
-  </div>
-
-  <!-- Estado de la red -->
-  <div class="flex items-center gap-2">
-    <span id="dot-red"
-      class="block w-2 h-2 rounded-full bg-white/25">
-    </span>
-    <span id="texto-red"
-      class="font-mono text-xs tracking-tight" style="color:rgba(253,94,83,0.6);">
-      comprobando red…
-    </span>
+<header>
+  <div class="logo">Yagüi</div>
+  <div class="header-links">
+    <a href="#"></a>
+    <a href="#"></a>
+    <a href="#"></a>
   </div>
 </header>
 
-<!-- ═══════════════════════════════════════════
-     MAIN
-═══════════════════════════════════════════ -->
-<main class="flex-1 flex flex-col items-center justify-center px-4 pt-2 pb-10 gap-7">
+<main>
+  <div class="tagline">¿donde quieres buscar?</div>
 
-  <!-- Título -->
-  <div class="text-center">
-    <h1 class="font-bold leading-tight tracking-tight" style="font-size:clamp(2rem,8vw,3.5rem);color:#FD5E53;">
-      ¿Qué buscas?
-    </h1>
-    <p class="text-sm mt-2 font-light" style="color:rgba(253,94,83,0.55);">
-      Inventario en tiempo real · comercio local
-    </p>
+  <div class="search-wrap">
+    <input type="text" placeholder="¿qué estás buscando hoy?" id="searchInput" />
+    <button onclick="buscar()">→</button>
   </div>
 
-  <!-- Barra de búsqueda (sunset) -->
-  <div class="w-full" style="max-width:640px;">
-    <div class="flex items-center px-4 py-3 gap-2 shadow-lg" style="background:#FDF5E6;border-radius:0 0 12px 0;">
+  <div class="results-box" id="resultsBox">
+    <div class="results-header">resultados cercanos</div>
 
-      <!-- Campo de texto -->
-      <input
-        id="input-busqueda"
-        type="text"
-        placeholder="tornillos M6, café molido, pintura blanca…"
-        class="flex-1 bg-transparent text-base border-none focus:outline-none" style="color:#808000;"
-        autocomplete="off"
-        spellcheck="false"
-      />
-
-      <!-- Botón búsqueda (lupa) -->
-      <button
-        id="btn-buscar"
-        class="transition-colors flex items-center justify-center w-9 h-9 rounded-full" style="color:rgba(128,128,0,0.7);"
-        title="Buscar"
-        aria-label="Buscar"
-      >
-        <span class="material-symbols-rounded text-2xl">search</span>
-      </button>
-
-      <!-- Separador -->
-      <div class="w-px h-5" style="background:rgba(128,128,0,0.2);"></div>
-
-      <!-- Botón micrófono (chile red) -->
-      <button
-        id="btn-mic"
-        class="flex items-center justify-center w-9 h-9 rounded-full transition-colors" style="color:#808000;"
-        title="Buscar por voz"
-        aria-label="Buscar por voz"
-      >
-        <span class="material-symbols-rounded text-2xl">mic</span>
-      </button>
-
+    <div class="result-item">
+      <div class="result-distance"></div>
+      <div class="result-info">
+        <div class="result-name"></div>
+        <div class="result-meta"></div>
+      </div>
+      <div class="result-status status-yes"></div>
     </div>
 
-    <!-- Estado / feedback de búsqueda -->
-    <p id="estado-busqueda"
-       class="font-mono text-xs mt-2 px-1 min-h-[1.1em] tracking-tight" style="color:rgba(253,94,83,0.5);"
-    </p>
-  </div>
-
-  <!-- Caja de respuesta (olive) -->
-  <div class="w-full" style="max-width:640px;">
-    <div
-      id="caja-respuesta"
-      class="rounded-xl p-5 font-mono text-sm leading-relaxed overflow-y-auto shadow-inner"
-      style="background:#808000;color:#FDF5E6;min-height:220px;max-height:400px;"
-    >
-      <!-- Contenido inicial -->
-      <p class="opacity-50"><span style="color:rgba(253,245,230,0.5);">&gt;</span> Escribe o habla para buscar</p>
-      <p class="opacity-50"><span style="color:rgba(253,245,230,0.5);">&gt;</span> en la red Yagüi</p>
-      <p class="mt-3 opacity-30">
-        <span class="cursor-blink">█</span>
-      </p>
+    <div class="result-item">
+      <div class="result-distance"></div>
+      <div class="result-info">
+        <div class="result-name"></div>
+        <div class="result-meta"></div>
+      </div>
+      <div class="result-status status-yes"></div>
     </div>
-  </div>
 
+    <div class="result-item">
+      <div class="result-distance"></div>
+      <div class="result-info">
+        <div class="result-name"></div>
+        <div class="result-meta"></div>
+      </div>
+      <div class="result-status status-maybe"></div>
+    </div>
+
+  </div>
 </main>
 
-<!-- ═══════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════ -->
-<footer class="text-center py-5 px-6 font-mono text-xs space-y-1.5" style="color:rgba(253,94,83,0.5);">
-  <div class="flex justify-center gap-5 flex-wrap">
-    <a href="#" class="transition-colors" style="color:rgba(253,94,83,0.5);">Privacidad</a>
-    <a href="#" class="transition-colors" style="color:rgba(253,94,83,0.5);">Términos</a>
-    <a href="#" class="transition-colors" style="color:rgba(253,94,83,0.5);">Acerca de</a>
-  </div>
+<footer>
+  <a href="#">Privacidad</a>
+  <a href="#"></a>
+  <a href="#"></a>
+  <a href="#">© Yagüi 2026</a>
 </footer>
 
-<!-- ═══════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════ -->
-<script src="./main.js"></script>
+<script>
+  document.getElementById('searchInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') buscar();
+  });
+
+  function buscar() {
+    var q = document.getElementById('searchInput').value.trim();
+    if (!q) return;
+    var box = document.getElementById('resultsBox');
+    box.innerHTML = '<div class="results-header">buscando nodos activos...</div><div class="no-results">consultando la red cerca de ti</div>';
+    setTimeout(function() {
+      box.innerHTML = '<div class="results-header">resultado para "' + q + '"</div><div class="no-results">conecta tu nodo para ver resultados reales</div>';
+    }, 1400);
+  }
+</script>
+
 </body>
 </html>

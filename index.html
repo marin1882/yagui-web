@@ -228,7 +228,7 @@
 
   <div class="search-wrap">
     <input type="text" placeholder="¿qué estás buscando hoy?" id="searchInput" />
-    <button onclick="buscar()">→</button>
+    <button id="btn-buscar">→</button>
   </div>
 
   <div class="results-box" id="resultsBox">
@@ -271,21 +271,6 @@
   <a href="#">© Yagüi 2026</a>
 </footer>
 
-<script>
-  document.getElementById('searchInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') buscar();
-  });
-
-  function buscar() {
-    var q = document.getElementById('searchInput').value.trim();
-    if (!q) return;
-    var box = document.getElementById('resultsBox');
-    box.innerHTML = '<div class="results-header">buscando nodos activos...</div><div class="no-results">consultando la red cerca de ti</div>';
-    setTimeout(function() {
-      box.innerHTML = '<div class="results-header">resultado para "' + q + '"</div><div class="no-results">conecta tu nodo para ver resultados reales</div>';
-    }, 1400);
-  }
-</script>
 
 </body>
 </html>

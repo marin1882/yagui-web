@@ -1,5 +1,12 @@
 "use strict";
 
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('btn-buscar').addEventListener('click', buscar);
+  document.getElementById('searchInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') buscar();
+  });
+});
+
 const API_BASE   = "https://xn--yagi-2ra.com";
 const BUSCAR_KEY = "yagui-public-d6c8b050-e51c-4781-b3cc-3cad2b1cd3ae";
 

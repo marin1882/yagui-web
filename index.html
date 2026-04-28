@@ -12,14 +12,14 @@
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Material Symbols -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
 
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: "Space Grotesk", sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Martian Mono", monospace; }
+  body { font-family: "Martian Mono", monospace; }
 
   .material-symbols-rounded {
     font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
@@ -28,14 +28,14 @@
   }
 
   /* Input: quitar borde/outline nativo, placeholder en blanco translúcido */
-  #input-busqueda::placeholder { color: rgba(255,255,255,0.5); }
+  #input-busqueda::placeholder { color: rgba(128,128,0,0.4); }
   #input-busqueda:focus { outline: none; }
-  #input-busqueda { caret-color: white; }
+  #input-busqueda { caret-color: #808000; }
 
   /* Olive terminal box scrollbar */
   #caja-respuesta::-webkit-scrollbar { width: 5px; }
-  #caja-respuesta::-webkit-scrollbar-track { background: #5a5a00; border-radius: 4px; }
-  #caja-respuesta::-webkit-scrollbar-thumb { background: #aaaa00; border-radius: 4px; }
+  #caja-respuesta::-webkit-scrollbar-track { background: rgba(128,128,0,0.5); border-radius: 4px; }
+  #caja-respuesta::-webkit-scrollbar-thumb { background: rgba(253,245,230,0.3); border-radius: 4px; }
 
   /* Mic pulse cuando graba */
   @keyframes mic-pulse {
@@ -53,15 +53,15 @@
 </style>
 </head>
 
-<body class="bg-terracota min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col" style="background:#E2725B;">
 
 <!-- ═══════════════════════════════════════════
      HEADER
 ═══════════════════════════════════════════ -->
 <header class="flex items-center justify-between px-6 py-5">
   <!-- Logo -->
-  <div class="font-mono font-bold text-white text-xl tracking-tight select-none">
-    Yag<span class="text-chile">ü</span>i
+  <div style="background:#FDF5E6;color:#FD5E53;border-radius:0 0 12px 0;padding:12px 16px;font-weight:700;font-size:1.25rem;letter-spacing:-0.025em;user-select:none;">
+    Yagüi
   </div>
 
   <!-- Estado de la red -->
@@ -70,7 +70,7 @@
       class="block w-2 h-2 rounded-full bg-white/25">
     </span>
     <span id="texto-red"
-      class="font-mono text-xs text-white/50 tracking-tight">
+      class="font-mono text-xs tracking-tight" style="color:rgba(253,94,83,0.6);">
       comprobando red…
     </span>
   </div>
@@ -83,26 +83,24 @@
 
   <!-- Título -->
   <div class="text-center">
-    <h1 class="font-grotesk font-bold text-white leading-tight tracking-tight"
-        style="font-size: clamp(2rem, 8vw, 3.5rem);">
+    <h1 class="font-bold leading-tight tracking-tight" style="font-size:clamp(2rem,8vw,3.5rem);color:#FD5E53;">
       ¿Qué buscas?
     </h1>
-    <p class="font-grotesk text-white/55 text-sm mt-2 font-light">
+    <p class="text-sm mt-2 font-light" style="color:rgba(253,94,83,0.55);">
       Inventario en tiempo real · comercio local
     </p>
   </div>
 
   <!-- Barra de búsqueda (sunset) -->
   <div class="w-full" style="max-width:640px;">
-    <div class="flex items-center bg-sunset rounded-2xl px-4 py-3 gap-2 shadow-lg">
+    <div class="flex items-center px-4 py-3 gap-2 shadow-lg" style="background:#FDF5E6;border-radius:0 0 12px 0;">
 
       <!-- Campo de texto -->
       <input
         id="input-busqueda"
         type="text"
         placeholder="tornillos M6, café molido, pintura blanca…"
-        class="flex-1 bg-transparent text-white font-grotesk text-base
-               border-none focus:outline-none"
+        class="flex-1 bg-transparent text-base border-none focus:outline-none" style="color:#808000;"
         autocomplete="off"
         spellcheck="false"
       />
@@ -110,8 +108,7 @@
       <!-- Botón búsqueda (lupa) -->
       <button
         id="btn-buscar"
-        class="text-white/70 hover:text-white transition-colors flex items-center justify-center
-               w-9 h-9 rounded-full hover:bg-white/10"
+        class="transition-colors flex items-center justify-center w-9 h-9 rounded-full" style="color:rgba(128,128,0,0.7);"
         title="Buscar"
         aria-label="Buscar"
       >
@@ -119,13 +116,12 @@
       </button>
 
       <!-- Separador -->
-      <div class="w-px h-5 bg-white/20"></div>
+      <div class="w-px h-5" style="background:rgba(128,128,0,0.2);"></div>
 
       <!-- Botón micrófono (chile red) -->
       <button
         id="btn-mic"
-        class="text-chile flex items-center justify-center
-               w-9 h-9 rounded-full hover:bg-white/10 transition-colors"
+        class="flex items-center justify-center w-9 h-9 rounded-full transition-colors" style="color:#808000;"
         title="Buscar por voz"
         aria-label="Buscar por voz"
       >
@@ -136,7 +132,7 @@
 
     <!-- Estado / feedback de búsqueda -->
     <p id="estado-busqueda"
-       class="font-mono text-white/40 text-xs mt-2 px-1 min-h-[1.1em] tracking-tight">
+       class="font-mono text-xs mt-2 px-1 min-h-[1.1em] tracking-tight" style="color:rgba(253,94,83,0.5);"
     </p>
   </div>
 
@@ -144,13 +140,12 @@
   <div class="w-full" style="max-width:640px;">
     <div
       id="caja-respuesta"
-      class="bg-olive rounded-xl p-5 font-mono text-sm leading-relaxed
-             overflow-y-auto shadow-inner"
-      style="color:#d4d400; min-height:220px; max-height:400px;"
+      class="rounded-xl p-5 font-mono text-sm leading-relaxed overflow-y-auto shadow-inner"
+      style="background:#808000;color:#FDF5E6;min-height:220px;max-height:400px;"
     >
       <!-- Contenido inicial -->
-      <p class="opacity-50"><span style="color:#aaaa00;">&gt;</span> Escribe o habla para buscar</p>
-      <p class="opacity-50"><span style="color:#aaaa00;">&gt;</span> en la red Yagüi</p>
+      <p class="opacity-50"><span style="color:rgba(253,245,230,0.5);">&gt;</span> Escribe o habla para buscar</p>
+      <p class="opacity-50"><span style="color:rgba(253,245,230,0.5);">&gt;</span> en la red Yagüi</p>
       <p class="mt-3 opacity-30">
         <span class="cursor-blink">█</span>
       </p>
@@ -162,18 +157,11 @@
 <!-- ═══════════════════════════════════════════
      FOOTER
 ═══════════════════════════════════════════ -->
-<footer class="text-center py-5 px-6 font-mono text-xs text-white/35 space-y-1.5">
+<footer class="text-center py-5 px-6 font-mono text-xs space-y-1.5" style="color:rgba(253,94,83,0.5);">
   <div class="flex justify-center gap-5 flex-wrap">
-    <a href="#" class="hover:text-white/60 transition-colors">Privacidad</a>
-    <a href="#" class="hover:text-white/60 transition-colors">Términos</a>
-    <a href="#" class="hover:text-white/60 transition-colors">Acerca de</a>
-  </div>
-  <div>
-    API:
-    <a href="https://xn--yagi-2ra.com/buscar?q=test&key=demo"
-       class="underline underline-offset-2 hover:text-white/60 transition-colors">
-      xn--yagi-2ra.com/buscar?q=test&amp;key=demo
-    </a>
+    <a href="#" class="transition-colors" style="color:rgba(253,94,83,0.5);">Privacidad</a>
+    <a href="#" class="transition-colors" style="color:rgba(253,94,83,0.5);">Términos</a>
+    <a href="#" class="transition-colors" style="color:rgba(253,94,83,0.5);">Acerca de</a>
   </div>
 </footer>
 
